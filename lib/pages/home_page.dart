@@ -1,6 +1,11 @@
+import 'package:easy_localization/src/public_ext.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
+import 'package:todoapp/data/local_storage.dart';
+import 'package:todoapp/helper/translation_helper.dart';
+import 'package:todoapp/main.dart';
 import 'package:todoapp/models/task_model.dart';
+import 'package:todoapp/widgets/custom_search_Delegate.dart';
 import 'package:todoapp/widgets/task_list_item.dart';
 
 class HomePage extends StatefulWidget {
@@ -11,12 +16,15 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late List<Task> _tasks;
+  late List<Task> _allTasks;
+  late LocalStorage _localStorage;
 
   @override
   void initState() {
     super.initState();
-    _tasks = <Task>[];
+    _localStorage = locator<LocalStorage>();
+    _allTasks = <Task>[];
+    _getAllTaskFromDb();
   }
 
   @override
@@ -26,62 +34,67 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: GestureDetector(
           onTap: () {
-            _showAddTaskBottomSheet(context);
+            _showAddTaskBottomSheet();
           },
           child: const Text(
-            'Bugün Yapılacaklar',
+            'title',
             style: TextStyle(color: Colors.black),
-          ),
+          ).tr(),
         ),
         centerTitle: false,
         actions: [
           IconButton(
+            onPressed: () {
+              _showSearchPage();
+            },
             icon: const Icon(
               Icons.search,
-              color: Colors.grey,
             ),
-            onPressed: () {},
           ),
           IconButton(
-            icon: const Icon(Icons.add),
             onPressed: () {
-              _showAddTaskBottomSheet(context);
+              _showAddTaskBottomSheet();
             },
-          )
+            icon: const Icon(Icons.add),
+          ),
         ],
       ),
-      body: _tasks.isNotEmpty
+      body: _allTasks.isNotEmpty
           ? ListView.builder(
               itemBuilder: (context, index) {
-                var _task = _tasks[index];
+                var _oankiListeElemani = _allTasks[index];
                 return Dismissible(
                   background: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.delete, color: Colors.grey),
-                      SizedBox(width: 8),
-                      Text('Bu görev silindi'),
+                    children: [
+                      const Icon(
+                        Icons.delete,
+                        color: Colors.grey,
+                      ),
+                      const SizedBox(
+                        width: 8,
+                      ),
+                      Text('remove_task').tr()
                     ],
                   ),
-                  key: Key(_task.id),
+                  key: Key(_oankiListeElemani.id),
                   onDismissed: (direction) {
-                    _tasks.removeAt(index);
+                    _allTasks.removeAt(index);
+                    _localStorage.deleteTask(task: _oankiListeElemani);
                     setState(() {});
                   },
-                  child: TaskItem(
-                    task: _task,
-                  ),
+                  child: TaskItem(task: _oankiListeElemani),
                 );
               },
-              itemCount: _tasks.length,
+              itemCount: _allTasks.length,
             )
-          : const Center(
-              child: Text('Henüz bir görev eklenmedi.'),
+          : Center(
+              child: Text('empty_task_list').tr(),
             ),
     );
   }
 
-  void _showAddTaskBottomSheet(BuildContext context) {
+  void _showAddTaskBottomSheet() {
     showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -90,26 +103,43 @@ class _HomePageState extends State<HomePage> {
               EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
           width: MediaQuery.of(context).size.width,
           child: ListTile(
-              title: TextField(
-            autofocus: true,
-            style: const TextStyle(fontSize: 24),
-            decoration: const InputDecoration(
-                hintText: "Yapılacak işinizi giriniz",
-                border: InputBorder.none),
-            onSubmitted: (value) {
-              Navigator.of(context).pop();
-              if (value.length > 3) {
-                DatePicker.showTimePicker(context, showSecondsColumn: false,
-                    onConfirm: (time) {
-                  var task = Task.create(name: value, createdAt: time);
-                  _tasks.add(task);
-                  setState(() {});
-                });
-              }
-            },
-          )),
+            title: TextField(
+              autofocus: true,
+              style: const TextStyle(fontSize: 20),
+              decoration: InputDecoration(
+                hintText: 'add_task'.tr(),
+                border: InputBorder.none,
+              ),
+              onSubmitted: (value) {
+                Navigator.of(context).pop();
+                if (value.length > 3) {
+                  DatePicker.showTimePicker(context,
+                      locale: TranslationHelper.getDeviceLanguage(context),
+                      showSecondsColumn: false, onConfirm: (time) async {
+                    var yeniEklenecekGorev =
+                        Task.create(name: value, createdAt: time);
+
+                    _allTasks.insert(0, yeniEklenecekGorev);
+                    await _localStorage.addTask(task: yeniEklenecekGorev);
+                    setState(() {});
+                  });
+                }
+              },
+            ),
+          ),
         );
       },
     );
+  }
+
+  void _getAllTaskFromDb() async {
+    _allTasks = await _localStorage.getAllTask();
+    setState(() {});
+  }
+
+  void _showSearchPage() async {
+    await showSearch(
+        context: context, delegate: CustomSearchDelegate(allTasks: _allTasks));
+    _getAllTaskFromDb();
   }
 }
