@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
+import 'package:todoapp/models/task_model.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -8,9 +10,14 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
-          'Bugün Yapılacaklar',
-          style: TextStyle(color: Colors.black),
+        title: GestureDetector(
+          onTap: () {
+            _showAddTaskBottomSheet(context);
+          },
+          child: const Text(
+            'Bugün Yapılacaklar',
+            style: TextStyle(color: Colors.black),
+          ),
         ),
         centerTitle: false,
         actions: [
@@ -37,12 +44,21 @@ class HomePage extends StatelessWidget {
           padding:
               EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
           width: MediaQuery.of(context).size.width,
-          child: const ListTile(
+          child: ListTile(
               title: TextField(
-            style: TextStyle(fontSize: 24),
-            decoration: InputDecoration(
+            style: const TextStyle(fontSize: 24),
+            decoration: const InputDecoration(
                 hintText: "Yapılacak işinizi giriniz",
                 border: InputBorder.none),
+            onSubmitted: (value) {
+              Navigator.of(context).pop();
+              if (value.length > 3) {
+                DatePicker.showTimePicker(context, showSecondsColumn: false,
+                    onConfirm: (time) {
+                  var task = Task.create(name: value, createdAt: time);
+                });
+              }
+            },
           )),
         );
       },
