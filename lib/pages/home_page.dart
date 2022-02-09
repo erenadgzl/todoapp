@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
 import 'package:todoapp/models/task_model.dart';
+import 'package:todoapp/widgets/task_list_item.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -67,9 +68,8 @@ class _HomePageState extends State<HomePage> {
                     _tasks.removeAt(index);
                     setState(() {});
                   },
-                  child: ListTile(
-                    title: Text(_task.name + " " + _task.id),
-                    subtitle: Text(_task.createdAt.toString()),
+                  child: TaskItem(
+                    task: _task,
                   ),
                 );
               },
@@ -91,6 +91,7 @@ class _HomePageState extends State<HomePage> {
           width: MediaQuery.of(context).size.width,
           child: ListTile(
               title: TextField(
+            autofocus: true,
             style: const TextStyle(fontSize: 24),
             decoration: const InputDecoration(
                 hintText: "Yapılacak işinizi giriniz",
