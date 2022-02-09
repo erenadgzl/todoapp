@@ -2,8 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
 import 'package:todoapp/models/task_model.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  late List<Task> _tasks;
+
+  @override
+  void initState() {
+    super.initState();
+    _tasks = <Task>[];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +35,10 @@ class HomePage extends StatelessWidget {
         centerTitle: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
+            icon: const Icon(
+              Icons.search,
+              color: Colors.grey,
+            ),
             onPressed: () {},
           ),
           IconButton(
@@ -33,6 +49,35 @@ class HomePage extends StatelessWidget {
           )
         ],
       ),
+      body: _tasks.isNotEmpty
+          ? ListView.builder(
+              itemBuilder: (context, index) {
+                var _task = _tasks[index];
+                return Dismissible(
+                  background: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.delete, color: Colors.grey),
+                      SizedBox(width: 8),
+                      Text('Bu görev silindi'),
+                    ],
+                  ),
+                  key: Key(_task.id),
+                  onDismissed: (direction) {
+                    _tasks.removeAt(index);
+                    setState(() {});
+                  },
+                  child: ListTile(
+                    title: Text(_task.name + " " + _task.id),
+                    subtitle: Text(_task.createdAt.toString()),
+                  ),
+                );
+              },
+              itemCount: _tasks.length,
+            )
+          : const Center(
+              child: Text('Henüz bir görev eklenmedi.'),
+            ),
     );
   }
 
@@ -56,6 +101,8 @@ class HomePage extends StatelessWidget {
                 DatePicker.showTimePicker(context, showSecondsColumn: false,
                     onConfirm: (time) {
                   var task = Task.create(name: value, createdAt: time);
+                  _tasks.add(task);
+                  setState(() {});
                 });
               }
             },
